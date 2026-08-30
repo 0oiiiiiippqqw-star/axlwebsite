@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<script>
+  // Интро (плавное появление хиро-блоков) должно проиграться один раз за сессию —
+  // при переходах между страницами сайта оно больше не повторяется.
+  if (sessionStorage.getItem("axl_intro_seen")) {
+    document.documentElement.classList.add("no-intro");
+  } else {
+    sessionStorage.setItem("axl_intro_seen", "1");
+  }
+</script>
+<title>AXL — Набор в клан | Rust</title>
+<meta name="description" content="AXL — дисциплинированный Rust-клан. Открыт набор Combat, Support, Lead и Проверяющих. Два сервера, выплаты активным, регулярные турниры.">
+<meta name="theme-color" content="#0a0709">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AXL — Набор в клан | Rust">
+<meta property="og:description" content="Дисциплинированный Rust-клан. Открыт набор Combat, Support, Lead и Проверяющих.">
+<meta property="og:locale" content="ru_RU">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff5c57'/%3E%3Cstop offset='1' stop-color='%23ffb454'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='28' fill='%2309090f'/%3E%3Ctext x='50' y='67' font-family='Arial' font-weight='900' font-size='48' fill='url(%23g)' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.discordapp.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="speculationrules">
+  { "prefetch": [{ "urls": ["/search/", "/profile/", "/tournaments/"], "eagerness": "moderate" }] }
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<canvas id="aurora" aria-hidden="true"></canvas>
+<div class="bg-vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<header class="site-header">
+  <nav class="site-nav auth-only" id="siteNav" hidden>
+    <div class="nav-inner">
+      <span class="nav-logo">AXL</span>
+      <div class="nav-links" id="navLinks">
+        <a href="#top" data-page="home" aria-current="page">Набор</a>
+        <a href="/tournaments/" data-page="tournaments">Турниры</a>
+        <a href="/search/" class="auth-only" hidden data-page="search">Поиск</a>
+      </div>
+      <div class="nav-side">
+        <button class="nav-cta guest-only" type="button" data-nav-login>
+          <span class="cta-spinner" aria-hidden="true"></span>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.3A17.6 17.6 0 0 0 15.9 4c-.2.4-.5.9-.6 1.3a16.3 16.3 0 0 0-4.6 0A9 9 0 0 0 10 4a17.6 17.6 0 0 0-4.4 1.3C3 9.6 2.3 13.8 2.6 18a17.7 17.7 0 0 0 5.1 2.5c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.9l.4-.3a12.6 12.6 0 0 0 9 0l.4.3c-.5.4-1.1.7-1.7.9.3.7.7 1.3 1.1 1.9A17.7 17.7 0 0 0 21.4 18c.4-4.8-.8-9-3.7-12.7ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          <span data-label>Войти</span>
+        </button>
+        <a class="nav-user auth-only" hidden href="/profile/">
+          <span class="avatar" data-user-avatar aria-hidden="true"></span>
+          <span data-user-name>—</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <div class="hero-halo" aria-hidden="true"></div>
+
+    <div class="hero-inner">
+      <div class="badge intro-item" style="--d:0"><span class="dot"></span>Набор открыт</div>
+
+      <h1 class="logo">
+        <span class="logo-l" style="--i:0">A</span><span class="logo-l" style="--i:1">X</span><span class="logo-l" style="--i:2">L</span>
+      </h1>
+
+      <p class="tagline intro-item" style="--d:2">Rust clan <span class="tagline-sep">·</span> Набор в клан</p>
+
+      <p class="hero-lede intro-item" style="--d:3">
+        Дисциплинированный клан для серьёзных рейдов, чётких коллов и стабильных вайпов.
+        Берём тех, кто готов вкладываться в результат.
+      </p>
+
+      <div class="hero-cta intro-item" style="--d:4">
+        <a class="cta" href="https://discord.gg/ADq2zTx5v" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.3A17.6 17.6 0 0 0 15.9 4c-.2.4-.5.9-.6 1.3a16.3 16.3 0 0 0-4.6 0A9 9 0 0 0 10 4a17.6 17.6 0 0 0-4.4 1.3C3 9.6 2.3 13.8 2.6 18a17.7 17.7 0 0 0 5.1 2.5c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.9l.4-.3a12.6 12.6 0 0 0 9 0l.4.3c-.5.4-1.1.7-1.7.9.3.7.7 1.3 1.1 1.9A17.7 17.7 0 0 0 21.4 18c.4-4.8-.8-9-3.7-12.7ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          <span>Подать заявку</span>
+        </a>
+        <button class="cta-ghost cta-discord" type="button" id="discordLoginBtn">
+          <span class="cta-spinner" aria-hidden="true"></span>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.3A17.6 17.6 0 0 0 15.9 4c-.2.4-.5.9-.6 1.3a16.3 16.3 0 0 0-4.6 0A9 9 0 0 0 10 4a17.6 17.6 0 0 0-4.4 1.3C3 9.6 2.3 13.8 2.6 18a17.7 17.7 0 0 0 5.1 2.5c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.9l.4-.3a12.6 12.6 0 0 0 9 0l.4.3c-.5.4-1.1.7-1.7.9.3.7.7 1.3 1.1 1.9A17.7 17.7 0 0 0 21.4 18c.4-4.8-.8-9-3.7-12.7ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          <span data-label>Войти через Discord</span>
+        </button>
+      </div>
+
+      <dl class="hero-readout intro-item" style="--d:5">
+        <div><dt>Серверов</dt><dd data-count="2">0</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>Участников</dt><dd id="memberCount" data-count="3">0</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>Вайп</dt><dd class="rd-text">ЧТ</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>С основания</dt><dd data-count="2025">0</dd></div>
+      </dl>
+    </div>
+
+    <div class="scroll-hint intro-item" style="--d:7" aria-hidden="true"><span></span></div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <div class="ticker-set">
+        <span>Рейды</span><i>◆</i><span>Чёткие коллы</span><i>◆</i><span>Турниры</span><i>◆</i><span>Выплаты активным</span><i>◆</i><span>2 сервера</span><i>◆</i><span>Вайп · чт 20:00 мск</span><i>◆</i>
+      </div>
+      <div class="ticker-set">
+        <span>Рейды</span><i>◆</i><span>Чёткие коллы</span><i>◆</i><span>Турниры</span><i>◆</i><span>Выплаты активным</span><i>◆</i><span>2 сервера</span><i>◆</i><span>Вайп · чт 20:00 мск</span><i>◆</i>
+      </div>
+    </div>
+  </div>
+
+  <section class="roles" id="roles">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">01 · Требования</span>
+        <h2>Выбери свою роль</h2>
+      </div>
+      <p class="section-lede">Четыре роли — четыре набора требований. Заявки без микрофона не рассматриваем.</p>
+    </div>
+
+    <div class="roles-grid">
+
+      <article class="role glass glow reveal" data-role="combat">
+        <div class="role-top">
+          <div class="role-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </div>
+          <span class="role-tag">Combat</span>
+        </div>
+        <h3>Combat Player</h3>
+        <p class="role-desc">Боевое ядро клана: роуф-файты, онлайн-дефенс и рейды.</p>
+        <div class="role-stats">
+          <div class="stat">
+            <span class="stat-label">Возраст</span>
+            <span class="stat-value">14+</span>
+            <span class="stat-note">без исключений</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Опыт</span>
+            <span class="stat-value">2000+ <small>ч</small></span>
+            <span class="stat-note">на одном аккаунте</span>
+          </div>
+        </div>
+        <p class="role-req">Hellis FC 30+ за 10 мин</p>
+      </article>
+
+      <article class="role glass glow reveal" data-role="support" style="--rd:1">
+        <div class="role-top">
+          <div class="role-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L2 19l3 3 7.3-7.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg>
+          </div>
+          <span class="role-tag">Support</span>
+        </div>
+        <h3>Electric / Fermer / Builder</h3>
+        <p class="role-desc">Экономика клана: фарм, электрика и застройка базы.</p>
+        <div class="role-stats">
+          <div class="stat">
+            <span class="stat-label">Возраст</span>
+            <span class="stat-value">14+</span>
+            <span class="stat-note">без исключений</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Опыт</span>
+            <span class="stat-value">1500+ <small>ч</small></span>
+            <span class="stat-note">искл.</span>
+          </div>
+        </div>
+        <p class="role-req">Знать свою роль и выполнять задания в сроки</p>
+      </article>
+
+      <article class="role glass glow reveal" data-role="lead" style="--rd:2">
+        <div class="role-top">
+          <div class="role-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          </div>
+          <span class="role-tag">Lead</span>
+        </div>
+        <h3>Coller</h3>
+        <p class="role-desc">Ведёт рейды и файты: коллы, решения, ответственность.</p>
+        <div class="role-stats">
+          <div class="stat">
+            <span class="stat-label">Возраст</span>
+            <span class="stat-value">16+</span>
+            <span class="stat-note">без исключений</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Опыт</span>
+            <span class="stat-value">4000+ <small>ч</small></span>
+            <span class="stat-note">без исключений</span>
+          </div>
+        </div>
+        <p class="role-req">Лидерские качества, высокий уровень игры, опыт на роли коллера</p>
+      </article>
+
+      <article class="role glass glow reveal" data-role="recruiter" style="--rd:3">
+        <div class="role-top">
+          <div class="role-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          </div>
+          <span class="role-tag">Promo</span>
+        </div>
+        <h3>Проверяющий</h3>
+        <p class="role-desc">Медиа-крыло клана: реклама, охват и набор людей.</p>
+        <div class="role-stats">
+          <div class="stat">
+            <span class="stat-label">Возраст</span>
+            <span class="stat-value">14+</span>
+            <span class="stat-note">без исключений</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Награда</span>
+            <span class="stat-value">%</span>
+            <span class="stat-note">с призовых турниров</span>
+          </div>
+        </div>
+        <p class="role-req">Рекламирует клан и набирает людей — при победе клана на турнире получает долю призовых</p>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="wipe" id="wipe">
+    <div class="wipe-card glass glow reveal">
+      <div class="wipe-left">
+        <span class="wipe-label"><span class="dot" aria-hidden="true"></span>Следующий вайп</span>
+        <p class="wipe-note">Каждый четверг · 20:00 МСК · синхронно с обновлением Rust</p>
+      </div>
+      <span class="wipe-timer" id="wipeTimer" role="timer">—:—:—</span>
+    </div>
+  </section>
+
+  <section class="offer" id="offer">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">02 · Преимущества</span>
+        <h2>От нас вы получите</h2>
+      </div>
+      <p class="section-lede">Не просто тег в нике — реальные условия для игры и роста.</p>
+    </div>
+    <ul class="offer-grid">
+      <li class="glass glow reveal of-big">
+        <span class="offer-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 15.5c.5 1 1.5 1.5 2.7 1.5 1.7 0 2.8-.9 2.8-2.1 0-3-6-1.3-6-4.4 0-1.2 1.1-2.1 2.8-2.1 1.2 0 2.2.5 2.7 1.5M12 6v1.3M12 16.7V18"/></svg>
+        </span>
+        <span class="offer-title">Выплаты активным игрокам</span>
+        <span class="offer-note">Вклад в клан конвертируется в реальную награду — фарм, рейды и активность не остаются незамеченными</span>
+      </li>
+      <li class="glass glow reveal" style="--rd:1">
+        <span class="offer-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg>
+        </span>
+        <span class="offer-title">Частые турниры</span>
+        <span class="offer-note">Регулярные клановые турниры и ивенты</span>
+      </li>
+      <li class="glass glow reveal" style="--rd:2">
+        <span class="offer-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg>
+        </span>
+        <span class="offer-title">Игра на 2х серверах</span>
+        <span class="offer-note">Основной и запасной — всегда есть, где катать</span>
+      </li>
+      <li class="glass glow reveal of-big" style="--rd:3">
+        <span class="offer-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+        </span>
+        <span class="offer-title">Уверенные и чёткие коллы</span>
+        <span class="offer-note">Опытные коллеры ведут рейды и роуф-файты — никакого хаоса в голосовом, каждый знает свою задачу</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="roster" id="roster">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">03 · Состав</span>
+        <h2>Кто уже в AXL</h2>
+      </div>
+      <p class="section-lede">Живые данные с Discord-сервера клана.</p>
+    </div>
+    <div class="roster-card glass glow reveal">
+      <dl class="roster-stats">
+        <div><dt>Всего</dt><dd id="rosterTotal">—</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>Combat</dt><dd id="rosterCombat">—</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>Support</dt><dd id="rosterSupport">—</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>Lead</dt><dd id="rosterLead">—</dd></div>
+        <div class="rd-sep" aria-hidden="true"></div>
+        <div><dt>Promo</dt><dd id="rosterRecruiter">—</dd></div>
+      </dl>
+      <div class="roster-avatars" id="rosterAvatars" aria-hidden="true"></div>
+      <p class="roster-note">Хочешь оказаться здесь? Подай заявку в Discord.</p>
+    </div>
+  </section>
+
+  <section class="process" id="process">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">04 · Начни путь</span>
+        <h2>Как попасть в клан</h2>
+      </div>
+      <p class="section-lede">Три шага — от заявки до тега AXL в нике.</p>
+    </div>
+    <ol class="steps">
+      <li class="reveal">
+        <span class="step-num" aria-hidden="true">01</span>
+        <div class="step-body">
+          <h3>Подай заявку</h3>
+          <p>на нашем Discord-сервере</p>
+        </div>
+      </li>
+      <li class="reveal" style="--rd:1">
+        <span class="step-num" aria-hidden="true">02</span>
+        <div class="step-body">
+          <h3>Дождись приглашения</h3>
+          <p>в голосовой канал проверки</p>
+        </div>
+      </li>
+      <li class="reveal" style="--rd:2">
+        <span class="step-num" aria-hidden="true">03</span>
+        <div class="step-body">
+          <h3>Пройди проверку</h3>
+          <p>и добро пожаловать в AXL</p>
+        </div>
+      </li>
+    </ol>
+    <div class="process-cta reveal">
+      <a class="cta-ghost" href="https://discord.gg/ADq2zTx5v" target="_blank" rel="noopener">
+        <span>Перейти в Discord</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="partners" id="partners">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">05 · Сотрудничество</span>
+        <h2>Реклама и партнёрства</h2>
+      </div>
+      <p class="section-lede">Совместные турниры, реклама, контент и другие предложения — обсудим напрямую.</p>
+    </div>
+    <div class="partner-card glass glow reveal">
+      <div class="partner-info">
+        <span class="partner-label">Прямая связь</span>
+        <p class="partner-note">Пиши владельцу клана в личные сообщения — обсудим условия и детали.</p>
+      </div>
+      <div class="partner-actions">
+        <a class="cta" href="https://discord.com/users/1498556866907738123" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.3A17.6 17.6 0 0 0 15.9 4c-.2.4-.5.9-.6 1.3a16.3 16.3 0 0 0-4.6 0A9 9 0 0 0 10 4a17.6 17.6 0 0 0-4.4 1.3C3 9.6 2.3 13.8 2.6 18a17.7 17.7 0 0 0 5.1 2.5c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.9l.4-.3a12.6 12.6 0 0 0 9 0l.4.3c-.5.4-1.1.7-1.7.9.3.7.7 1.3 1.1 1.9A17.7 17.7 0 0 0 21.4 18c.4-4.8-.8-9-3.7-12.7ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          <span>Написать в Discord</span>
+        </a>
+        <a class="cta-ghost cta-discord" href="https://discord.gg/ADq2zTx5v" target="_blank" rel="noopener">
+          <span>Или через сервер</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq">
+    <div class="section-head reveal">
+      <span class="eyebrow">06 · Вопросы</span>
+      <h2>Частые вопросы</h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item glass reveal">
+        <summary>
+          <span>Нужен ли микрофон?</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p>Да, микрофон обязателен для всех ролей — коммуникация решает исход рейдов и роуф-файтов.</p>
+      </details>
+      <details class="faq-item glass reveal" style="--rd:1">
+        <summary>
+          <span>Что если у меня меньше требуемых часов?</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p>Возможны исключения при высоком уровне игры — укажите это в заявке, рассмотрим индивидуально.</p>
+      </details>
+      <details class="faq-item glass reveal" style="--rd:2">
+        <summary>
+          <span>Как часто происходят вайпы?</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p>По четвергам, синхронно с обновлениями Rust на обоих серверах клана.</p>
+      </details>
+      <details class="faq-item glass reveal" style="--rd:3">
+        <summary>
+          <span>Можно ли играть эпизодически?</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p>Клан рассчитан на активных игроков — за периоды простоя выплаты не начисляются.</p>
+      </details>
+      <details class="faq-item glass reveal" style="--rd:4">
+        <summary>
+          <span>Сколько длится проверка?</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p>Один голосовой созвон с коллером, дальше — испытательный период на сервере.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="final-cta glass reveal">
+    <div class="final-cta-inner">
+      <h2>Готов доказать, что достоин?</h2>
+      <p>Заявки открыты. Проверка проходит в течение нескольких дней.</p>
+      <div class="cta-row">
+        <a class="cta" href="https://discord.gg/ADq2zTx5v" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.3A17.6 17.6 0 0 0 15.9 4c-.2.4-.5.9-.6 1.3a16.3 16.3 0 0 0-4.6 0A9 9 0 0 0 10 4a17.6 17.6 0 0 0-4.4 1.3C3 9.6 2.3 13.8 2.6 18a17.7 17.7 0 0 0 5.1 2.5c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.9l.4-.3a12.6 12.6 0 0 0 9 0l.4.3c-.5.4-1.1.7-1.7.9.3.7.7 1.3 1.1 1.9A17.7 17.7 0 0 0 21.4 18c.4-4.8-.8-9-3.7-12.7ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          <span>Вступить в AXL</span>
+        </a>
+        <a class="cta-ghost" href="#partners">
+          <span>Сотрудничество</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <span class="footer-logo">AXL</span>
+      <p>Дисциплинированный Rust-клан. Два сервера, турниры, выплаты активным. Набор открыт.</p>
+    </div>
+    <nav class="footer-links" aria-label="Ссылки">
+      <a href="#roles">Роли</a>
+      <a href="#offer">Бонусы</a>
+      <a href="#process">Как попасть</a>
+      <a href="#partners">Сотрудничество</a>
+      <a href="#faq">Вопросы</a>
+      <a href="#roster">Состав</a>
+    </nav>
+    <a class="footer-discord" href="https://discord.gg/ADq2zTx5v" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.3A17.6 17.6 0 0 0 15.9 4c-.2.4-.5.9-.6 1.3a16.3 16.3 0 0 0-4.6 0A9 9 0 0 0 10 4a17.6 17.6 0 0 0-4.4 1.3C3 9.6 2.3 13.8 2.6 18a17.7 17.7 0 0 0 5.1 2.5c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.9l.4-.3a12.6 12.6 0 0 0 9 0l.4.3c-.5.4-1.1.7-1.7.9.3.7.7 1.3 1.1 1.9A17.7 17.7 0 0 0 21.4 18c.4-4.8-.8-9-3.7-12.7ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+      <span>Discord</span>
+    </a>
+  </div>
+  <p class="footer-copy">© <span id="year"></span> AXL Clan · Rust</p>
+</footer>
+
+<nav class="tabbar auth-only" hidden aria-label="Навигация">
+  <a href="/" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+    <span>Набор</span>
+  </a>
+  <a href="/tournaments/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg>
+    <span>Турниры</span>
+  </a>
+  <a href="/search/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Поиск</span>
+  </a>
+  <a href="/profile/">
+    <span class="avatar tab-avatar auth-only" data-user-avatar hidden aria-hidden="true"></span>
+    <svg class="guest-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+    <span>Профиль</span>
+  </a>
+</nav>
+
+<script src="assets/js/auth.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1851 @@
+/* ==========================================================================
+   AXL — Rust clan recruitment page
+   Design language: dark aurora minimalism.
+   Near-black base, canvas-drawn blurred gradient background, glass surfaces,
+   pill buttons, large rounded radii, centered composition, staged intro.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  interpolate-size: allow-keywords;
+
+  /* surfaces — тёплый угольный, «ночь у печки» вместо сине-фиолетовой */
+  --bg: #0a0709;
+  --glass: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028));
+  --glass-strong: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  /* text */
+  --text: #f6f4f4;
+  --text-dim: rgba(238, 230, 230, 0.64);
+  --text-faint: rgba(238, 230, 230, 0.38);
+
+  /* accents (echo the aurora): алый · янтарь · лёд */
+  --ember: #ff5c57;
+  --gold: #ffb454;
+  --violet: #5b8cff;
+  --cyan: #4dd6ff;
+  --ok: #4ade80;
+
+  --font-display: "Unbounded", "Manrope", sans-serif;
+  --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r-lg: 26px;
+  --r-md: 18px;
+  --r-full: 999px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.65, 0.05, 0.36, 1);
+
+  /* intro choreography: staggered fade-in ("появление") right after load */
+  --intro: 0.2s;
+}
+
+/* Cross-document view transitions (Chrome 126+): the browser cross-fades
+   whole page navigations instead of flashing. Ignored elsewhere. */
+@view-transition {
+  navigation: auto;
+}
+
+* {
+  box-sizing: border-box;
+  /* убираем стандартную синюю подсветку тапа на мобильных браузерах —
+     у нас свои hover/active-состояния на кнопках и ссылках */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg);
+  /* Reserve the scrollbar gutter so short pages (profile gate) don't shift
+     the centered layout sideways relative to scrollable ones. */
+  scrollbar-gutter: stable;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Background lives on <html>: an opaque body would paint over the
+   fixed negative-z-index layers (aurora canvas, vignette). */
+body {
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+section {
+  scroll-margin-top: 100px;
+}
+
+img {
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--ember);
+  color: #180a04;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Skip link ---------- */
+
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 1rem;
+  z-index: 200;
+  background: #fff;
+  color: #0a0a10;
+  font-weight: 700;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--r-full);
+  text-decoration: none;
+  transition: top 0.25s var(--ease);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ---------- Focus visibility ---------- */
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* ---------- Intro: появление ----------
+   Вместо сплэш-экрана страница мягко проявляется: буквы логотипа и блоки
+   хиро выплывают из лёгкого блюра с расфокусом, без сдвигов по вертикали. */
+
+@keyframes letterIn {
+  from {
+    opacity: 0;
+    transform: scale(1.14);
+    filter: blur(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ---------- Background: aurora canvas + vignette + grain ---------- */
+
+/* Фоновые слои тянутся на «большой» вьюпорт (100lvh): когда мобильный
+   Chrome прячет адресную строку, внизу не мигает чёрная полоса и ничего
+   не дёргается — слой уже покрывает будущую высоту. */
+#aurora {
+  position: fixed;
+  inset: 0;
+  bottom: auto;
+  z-index: -2;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+  pointer-events: none;
+  animation: auroraIn 1.6s ease both;
+}
+
+@keyframes auroraIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bg-vignette {
+  position: fixed;
+  inset: 0;
+  bottom: auto;
+  height: 100vh;
+  height: 100lvh;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 85% 70% at 50% 35%, transparent 42%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  bottom: auto;
+  height: 100vh;
+  height: 100lvh;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Nav (floating glass pill) ----------
+   Плавающая стеклянная капсула по центру: некликабельная марка AXL,
+   ссылки (активная страница подсвечена цветом через aria-current),
+   справа — вход/профиль. */
+
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 90;
+  /* Own view-transition group: the header stays rock-solid during page
+     cross-fades instead of fading with the content. */
+  view-transition-name: site-header;
+}
+
+.site-nav {
+  display: flex;
+  justify-content: center;
+  padding: 1.1rem 1rem 0;
+  animation: navIn 0.9s var(--ease) calc(var(--intro) + 0.15s) both;
+}
+
+@keyframes navIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.7rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.3rem;
+  border-radius: var(--r-full);
+  background: rgba(12, 12, 18, 0.5);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.site-nav.scrolled .nav-inner {
+  background: rgba(11, 11, 16, 0.72);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .nav-inner {
+    background: rgba(13, 13, 19, 0.92);
+  }
+}
+
+/* Некликабельная марка — просто идентификатор, не ссылка. */
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  font-size: 0.92rem;
+  user-select: none;
+}
+
+.nav-links {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nav-links a:not(.nav-cta) {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.42rem 0.85rem;
+  border-radius: var(--r-full);
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+.nav-links a:not(.nav-cta):hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-links a[aria-current="page"]:not(.nav-cta) {
+  color: var(--text);
+  background: rgba(255, 92, 87, 0.13);
+}
+
+.nav-side {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #fff;
+  color: #0a0a10;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: var(--r-full);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.12);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.nav-cta svg {
+  width: 15px;
+  height: 15px;
+}
+
+.nav-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- Glass card ---------- */
+
+.glass {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: transform 0.35s var(--ease), border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* cursor-tracking border light + soft interior sheen */
+
+.glow {
+  --mx: 50%;
+  --my: 50%;
+}
+
+.glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.4), transparent 65%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(320px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.055), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.glow:hover::before,
+.glow:hover::after {
+  opacity: 1;
+}
+
+/* ---------- Buttons ---------- */
+
+.cta,
+.cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 1rem 1.9rem;
+  border-radius: var(--r-full);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.cta svg,
+.cta-ghost svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cta {
+  background: #fff;
+  color: #0a0a10;
+  box-shadow: 0 10px 34px rgba(255, 255, 255, 0.14);
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 44px rgba(255, 255, 255, 0.22);
+}
+
+.cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.cta-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.cta-ghost:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.cta-ghost:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Кнопка входа через Discord — тот же ghost, но с blurple-оттенком. */
+.cta-discord:hover {
+  border-color: rgba(139, 124, 248, 0.45);
+  background: rgba(139, 124, 248, 0.12);
+}
+
+/* ---------- Toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 2rem;
+  z-index: 150;
+  max-width: calc(100vw - 2.5rem);
+  padding: 0.9rem 1.4rem;
+  border-radius: var(--r-full);
+  background: rgba(14, 14, 20, 0.92);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---------- Hero ---------- */
+
+/* Первый экран — во всю высоту. svh (малый вьюпорт) вместо dvh: высота не
+   пересчитывается при скрытии адресной строки — нет дёргания при скролле. */
+.hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 7rem 1.5rem 4rem;
+  position: relative;
+}
+
+.hero-halo {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  width: min(680px, 92vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(255, 92, 87, 0.15), rgba(255, 180, 84, 0.07) 46%, transparent 72%);
+  filter: blur(30px);
+  pointer-events: none;
+  animation:
+    haloIn 1.6s var(--ease) calc(var(--intro) + 0.1s) both,
+    haloPulse 9s ease-in-out calc(var(--intro) + 1.7s) infinite alternate;
+}
+
+@keyframes haloIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes haloPulse {
+  from {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.07);
+  }
+}
+
+.hero-inner {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.intro-item {
+  animation: introUp 0.95s var(--ease) both;
+  animation-delay: calc(var(--intro) + var(--d) * 0.11s);
+}
+
+@keyframes introUp {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.045);
+  border-radius: var(--r-full);
+  margin-bottom: 1.2rem;
+}
+
+.badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  animation: pulseDot 2s ease-out infinite;
+}
+
+@keyframes pulseDot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(74, 222, 128, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+  }
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: clamp(3.6rem, 13vw, 7rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+  margin: 0;
+  color: var(--text);
+  text-shadow: 0 0 80px rgba(255, 92, 87, 0.32);
+}
+
+.logo-l {
+  display: inline-block;
+  animation: letterIn 1s var(--ease) both;
+  animation-delay: calc(var(--intro) + 0.18s + var(--i) * 0.12s);
+}
+
+.tagline {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin: 1.1rem 0 1.4rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.tagline-sep {
+  color: var(--ember);
+  margin: 0 0.4em;
+}
+
+.hero-lede {
+  color: var(--text-dim);
+  font-size: 1.06rem;
+  max-width: min(500px, 100%);
+  margin: 0 0 1.5rem;
+}
+
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-bottom: 1.8rem;
+}
+
+.hero-readout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.hero-readout div:not(.rd-sep) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hero-readout dt {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.hero-readout dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hero-readout dd span {
+  color: var(--ember);
+}
+
+/* курсор терминальной печати — данные хиро «печатаются», а не считаются вверх */
+.rd-cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--ember);
+  animation: rdBlink 0.85s step-end infinite;
+}
+
+@keyframes rdBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.rd-sep {
+  width: 1px;
+  height: 26px;
+  background: var(--border-strong);
+}
+
+/* ---------- Scroll hint ---------- */
+
+.scroll-hint {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* На узких экранах контент хиро выше вьюпорта — абсолютная подсказка
+   наезжала на статы, а роль «листай дальше» теперь играет бегущая строка. */
+@media (max-width: 600px) {
+  .scroll-hint {
+    display: none;
+  }
+}
+
+.scroll-hint span {
+  display: block;
+  width: 1px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  position: relative;
+}
+
+.scroll-hint span::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.8));
+  animation: scrollLine 2.2s var(--ease-io) infinite;
+}
+
+@keyframes scrollLine {
+  0% {
+    transform: translateY(-20px);
+  }
+  60%,
+  100% {
+    transform: translateY(54px);
+  }
+}
+
+/* ---------- Layout ---------- */
+
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  position: relative;
+}
+
+main > section {
+  padding: 2.6rem 0;
+}
+
+@media (min-width: 760px) {
+  main > section {
+    padding: 3.2rem 0;
+  }
+}
+
+/* ---------- Ticker (бегущая строка под хиро) ---------- */
+
+.ticker {
+  overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  border-block: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.016);
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  padding: 0.62rem 0;
+  animation: tickerMove 32s linear infinite;
+}
+
+/* две одинаковые копии: сдвиг на -50% даёт бесшовный цикл */
+.ticker-set {
+  display: flex;
+  align-items: center;
+  gap: 2.6rem;
+  padding-right: 2.6rem;
+}
+
+.ticker-track span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.ticker-track i {
+  font-style: normal;
+  font-size: 0.55rem;
+  color: var(--ember);
+}
+
+@keyframes tickerMove {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.section-head {
+  margin: 0 auto 1.6rem;
+  max-width: 620px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--ember), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.9rem;
+}
+
+h2 {
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+  background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.58));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.section-lede {
+  color: var(--text-dim);
+  font-size: 1rem;
+  margin: 0.9rem auto 0;
+  max-width: 480px;
+}
+
+
+/* ---------- Reveal on scroll ---------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px) scale(0.985);
+  filter: blur(8px);
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease), filter 0.9s var(--ease);
+  transition-delay: calc(var(--rd, 0) * 0.09s);
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+/* ---------- Roles ---------- */
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 760px) {
+  .roles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.role {
+  padding: 1.7rem 1.7rem 1.6rem;
+  --accent: 255, 255, 255;
+  /* мягкое свечение в цвет роли из верхнего правого угла + обычное стекло
+     (::before/::after заняты курсорным glow) */
+  background:
+    radial-gradient(60% 55% at 100% 0%, rgba(var(--accent), 0.08), transparent 70%),
+    var(--glass);
+}
+
+.role[data-role="combat"] {
+  --accent: 255, 92, 87;
+}
+
+.role[data-role="support"] {
+  --accent: 255, 180, 84;
+}
+
+.role[data-role="lead"] {
+  --accent: 77, 214, 255;
+}
+
+.role[data-role="recruiter"] {
+  --accent: 244, 114, 182;
+}
+
+.role:hover {
+  transform: translateY(-5px);
+  border-color: var(--border-strong);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.role-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+
+.role-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: rgb(var(--accent));
+  background: rgba(var(--accent), 0.1);
+  border: 1px solid rgba(var(--accent), 0.22);
+}
+
+.role-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.role-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(var(--accent));
+  background: rgba(var(--accent), 0.09);
+  border: 1px solid rgba(var(--accent), 0.2);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-full);
+}
+
+.role h3 {
+  font-size: 1.22rem;
+  margin-bottom: 0.4rem;
+}
+
+.role-desc {
+  margin: 0 0 1.1rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+.role-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.9rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.stat-value small {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.stat-note {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.role-req {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--text-dim);
+  border-left: 2px solid rgba(var(--accent), 0.55);
+  padding-left: 0.85rem;
+}
+
+/* ---------- Wipe countdown strip ---------- */
+
+.wipe {
+  padding: 0.5rem 0 !important;
+}
+
+.wipe-card {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding: 1.4rem 2rem;
+}
+
+.wipe-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.wipe-label .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 10px rgba(255, 138, 92, 0.7);
+}
+
+.wipe-note {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.wipe-timer {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, var(--ember), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .wipe-card {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* ---------- Roster preview ---------- */
+
+.roster-card {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.3rem;
+  padding: 1.8rem 1.5rem;
+}
+
+.roster-card {
+  max-width: 720px;
+}
+
+.roster-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.roster-stats div:not(.rd-sep) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.roster-stats dt {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.roster-stats dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.roster-avatars {
+  display: flex;
+  justify-content: center;
+  padding-left: 12px; /* компенсируем нахлёст первого кружка */
+}
+
+.roster-avatars .avatar {
+  width: 44px;
+  height: 44px;
+  margin-left: -12px;
+  border: 2px solid var(--bg);
+  animation: cardIn 0.5s var(--ease) both;
+  animation-delay: calc(var(--ai, 0) * 0.05s);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.roster-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+/* ---------- Offer (bento) ---------- */
+
+.offer-grid {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+}
+
+.offer-grid li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 1.4rem 1.2rem;
+}
+
+.offer-grid li:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+}
+
+.offer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 0.8rem;
+}
+
+.offer-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.offer-title {
+  font-weight: 700;
+  font-size: 0.99rem;
+}
+
+.offer-note {
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+
+/* Бенто-сетка: два «якорных» преимущества шире, контент по центру. */
+@media (min-width: 860px) {
+  .offer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .offer-grid li.of-big {
+    grid-column: span 2;
+  }
+  .of-big .offer-title {
+    font-size: 1.12rem;
+  }
+  .of-big .offer-note {
+    font-size: 0.9rem;
+    max-width: 440px;
+  }
+}
+
+/* ---------- Process / steps (таймлайн) ---------- */
+
+.steps {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 900px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.7rem;
+}
+
+.steps li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.85rem;
+}
+
+.step-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: rgba(12, 12, 18, 0.75);
+  border: 1px solid var(--border-strong);
+  position: relative;
+  z-index: 1;
+}
+
+.steps li:nth-child(1) .step-num {
+  border-color: rgba(255, 92, 87, 0.45);
+  box-shadow: 0 0 26px rgba(255, 92, 87, 0.16);
+}
+
+.steps li:nth-child(2) .step-num {
+  border-color: rgba(255, 180, 84, 0.45);
+  box-shadow: 0 0 26px rgba(255, 180, 84, 0.16);
+}
+
+.steps li:nth-child(3) .step-num {
+  border-color: rgba(77, 214, 255, 0.45);
+  box-shadow: 0 0 26px rgba(77, 214, 255, 0.16);
+}
+
+.steps h3 {
+  font-size: 1.05rem;
+  margin: 0 0 0.25rem;
+}
+
+.steps p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+/* На десктопе шаги встают в ряд, кружки соединяет горизонтальная линия. */
+@media (min-width: 760px) {
+  .steps {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+  .steps::before {
+    content: "";
+    position: absolute;
+    top: 28px;
+    left: 16.6%;
+    right: 16.6%;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 92, 87, 0.35), rgba(255, 180, 84, 0.35), rgba(77, 214, 255, 0.35));
+  }
+  .steps li {
+    flex: 1;
+    gap: 1rem;
+  }
+}
+
+.process-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.8rem;
+}
+
+/* ---------- Partners / сотрудничество ---------- */
+
+.partner-card {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.2rem;
+  padding: 1.8rem 1.6rem;
+}
+
+.partner-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.partner-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.partner-note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  max-width: 380px;
+}
+
+.partner-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+/* ---------- FAQ ---------- */
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  border-radius: var(--r-md);
+  overflow: clip;
+}
+
+.faq-item:hover {
+  border-color: var(--border-strong);
+}
+
+.faq-item summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.3rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+  transition: transform 0.35s var(--ease);
+}
+
+.faq-item[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.faq-item::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition: block-size 0.45s var(--ease), content-visibility 0.45s allow-discrete;
+}
+
+.faq-item[open]::details-content {
+  block-size: auto;
+}
+
+.faq-item p {
+  margin: 0;
+  padding: 0 1.3rem 1.15rem;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+/* ---------- Final CTA ---------- */
+
+.final-cta {
+  padding: 0 !important;
+  margin: 1rem auto 2rem;
+  max-width: 900px;
+  border-radius: 32px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.final-cta::before {
+  content: "";
+  position: absolute;
+  top: -55%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
+  aspect-ratio: 1.6;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 92, 87, 0.18), rgba(255, 180, 84, 0.09) 55%, transparent 75%);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.final-cta-inner {
+  position: relative;
+  padding: 2.5rem 1.75rem;
+}
+
+.final-cta h2 {
+  margin-bottom: 0.8rem;
+}
+
+.final-cta p {
+  color: var(--text-dim);
+  margin: 0 0 1.6rem;
+}
+
+.final-cta .cta-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+/* ---------- Footer ---------- */
+
+footer {
+  text-align: center;
+  padding: 2.6rem 1.5rem 1.9rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.footer-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0 auto 1.6rem;
+  text-align: center;
+}
+
+.footer-brand p {
+  margin: 0.55rem auto 0;
+  max-width: 340px;
+  font-size: 0.84rem;
+  color: var(--text-faint);
+  line-height: 1.55;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem 1.5rem;
+}
+
+.footer-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: color 0.25s ease;
+}
+
+.footer-links a:hover {
+  color: var(--text);
+}
+
+.footer-discord {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.footer-discord svg {
+  width: 18px;
+  height: 18px;
+}
+
+.footer-discord:hover {
+  color: var(--text);
+}
+
+.footer-copy {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+
+/* ---------- Auth chrome (avatar, nav user chip, spinner) ---------- */
+
+/* .nav-user and friends set their own display — keep [hidden] winning. */
+[hidden] {
+  display: none !important;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  color: #fff;
+  font-weight: 800;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.3rem 0.85rem 0.3rem 0.35rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  transition: background 0.25s ease, border-color 0.25s ease;
+  white-space: nowrap;
+}
+
+.nav-user:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--border-strong);
+}
+
+.nav-user .avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 0.8rem;
+}
+
+.cta-spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+.is-busy .cta-spinner {
+  display: inline-block;
+}
+
+.is-busy > svg {
+  display: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Плавное появление серверных данных ----------
+   .auth-only / .guest-only переключаются скриптом после ответа /api/me —
+   вместо резкого «прыжка» элементы мягко проявляются. Анимация перезапускается
+   каждый раз, когда с элемента снимается [hidden]. */
+
+.auth-only:not([hidden]),
+.guest-only:not([hidden]) {
+  animation: authFade 0.45s var(--ease) both;
+}
+
+/* Верхний бар — тоже .auth-only (виден только вошедшим), но пусть влетает
+   своей штатной navIn-анимацией, а не общим лёгким authFade. */
+.site-nav.auth-only:not([hidden]) {
+  animation: navIn 0.7s var(--ease) both;
+}
+
+@keyframes authFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Skip intro after the first pageview this session ---------- */
+
+.no-intro #aurora {
+  animation: none;
+  opacity: 1;
+}
+
+.no-intro .site-nav {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.no-intro .hero-halo {
+  animation: none;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.no-intro .intro-item,
+.no-intro .logo-l {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* App pages (profile/search) shouldn't re-blur their cards on every visit —
+   only on the first pageview of the session. */
+.no-intro .app-page .reveal {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: none;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ---------- Tab bar (мобильная навигация) ----------
+   На телефоне верхний бар прячется — навигация живёт в нижней панели. */
+
+.tabbar {
+  display: none;
+  position: fixed;
+  /* auto margins between left:0/right:0 centers the pill without relying
+     on left:50%+translateX(-50%) — that combo drifts off-center on some
+     mobile browsers once scrollbar-gutter/dvh recalculate the viewport. */
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin-inline: auto;
+  bottom: max(0.8rem, env(safe-area-inset-bottom));
+  z-index: 95;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border-radius: var(--r-full);
+  background: rgba(13, 10, 11, 0.78);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .tabbar {
+    background: rgba(14, 11, 12, 0.95);
+  }
+}
+
+.tabbar a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+  min-width: 64px;
+  padding: 0.5rem 0.65rem 0.45rem;
+  border-radius: 22px;
+  text-decoration: none;
+  color: var(--text-faint);
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+.tabbar a span:not(.avatar) {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tabbar svg {
+  width: 21px;
+  height: 21px;
+}
+
+.tabbar .tab-avatar {
+  width: 21px;
+  height: 21px;
+  font-size: 0.65rem;
+}
+
+.tabbar a[aria-current="page"] {
+  color: var(--text);
+  background: rgba(255, 92, 87, 0.14);
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    display: none;
+  }
+  .tabbar {
+    display: flex;
+  }
+  body {
+    padding-bottom: calc(5.2rem + env(safe-area-inset-bottom));
+  }
+  .toast {
+    bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 480px) {
+  .hero-cta {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hero-cta .cta,
+  .hero-cta .cta-ghost {
+    width: 100%;
+  }
+  /* Статы — панель 2×2 с внутренними линиями вместо ряда с разделителями,
+     который на узком экране рвался с «осиротевшими» чёрточками. */
+  .hero-readout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.028);
+  }
+  .hero-readout .rd-sep {
+    display: none;
+  }
+  .hero-readout > div:not(.rd-sep) {
+    padding: 0.8rem 0.4rem;
+  }
+  .hero-readout > div:nth-child(1),
+  .hero-readout > div:nth-child(3) {
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-readout > div:nth-child(1),
+  .hero-readout > div:nth-child(5) {
+    border-right: 1px solid var(--border);
+  }
+  .hero-readout dd {
+    font-size: 1rem;
+  }
+  main > section {
+    padding: 2.5rem 0;
+  }
+}
